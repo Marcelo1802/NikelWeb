@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testes - Nikel</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 4px solid #ddd;
+            background: #f8f9fa;
+        }
+        .test-item.pass {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .test-item.fail {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .test-item.running {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .summary {
+            font-size: 18px;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .summary.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .summary.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body id="app">
+    <div class="test-container">
+        <h1 class="mb-4">🧪 Testes do Projeto Nikel</h1>
+        
+        <div id="summary" class="summary">
+            Executando testes...
+        </div>
+
+        <div id="test-results"></div>
+
+        <div class="text-center mt-4">
+            <button onclick="runAllTests()" class="btn btn-primary">Executar Testes Novamente</button>
+            <a href="../html/index.html" class="btn btn-secondary">Voltar para o App</a>
+        </div>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script>
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0
+        };
+
+        function createTestItem(name, status, message) {
+            const item = document.createElement('div');
+            item.className = `test-item ${status}`;
+            item.innerHTML = `
+                <strong>${name}</strong>
+                <span style="float: right;">${status === 'pass' ? '✅' : '❌'}</span>
+                <div style="margin-top: 5px; font-size: 14px; color: #666;">${message}</div>
+            `;
+            return item;
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            const percentage = testResults.total > 0 
+                ? Math.round((testResults.passed / testResults.total) * 100) 
+                : 0;
+
+            if (testResults.failed === 0 && testResults.total > 0) {
+                summary.className = 'summary success';
+                summary.textContent = `✅ Todos os testes passaram! (${testResults.passed}/${testResults.total} - ${percentage}%)`;
+            } else if (testResults.total > 0) {
+                summary.className = 'summary error';
+                summary.textContent = `❌ Alguns testes falharam (${testResults.passed}/${testResults.total} passaram - ${percentage}%)`;
+            } else {
+                summary.className = 'summary';
+                summary.textContent = 'Executando testes...';
+            }
+        }
+
+        function test(name, testFn) {
+            testResults.total++;
+            const container = document.getElementById('test-results');
+            const item = createTestItem(name, 'running', 'Executando...');
+            container.appendChild(item);
+
+            try {
+                const result = testFn();
+                if (result === true || (result && result.pass)) {
+                    testResults.passed++;
+                    item.className = 'test-item pass';
+                    item.innerHTML = `
+                        <strong>${name}</strong>
+                        <span style="float: right;">✅</span>
+                        <div style="margin-top: 5px; font-size: 14px; color: #666;">${result.message || 'Teste passou'}</div>
+                    `;
+                } else {
+                    testResults.failed++;
+                    item.className = 'test-item fail';
+                    item.innerHTML = `
+                        <strong>${name}</strong>
+                        <span style="float: right;">❌</span>
+                        <div style="margin-top: 5px; font-size: 14px; color: #666;">${result.message || 'Teste falhou'}</div>
+                    `;
+                }
+            } catch (error) {
+                testResults.failed++;
+                item.className = 'test-item fail';
+                item.innerHTML = `
+                    <strong>${name}</strong>
+                    <span style="float: right;">❌</span>
+                    <div style="margin-top: 5px; font-size: 14px; color: #666;">Erro: ${error.message}</div>
+                `;
+            }
+            updateSummary();
+        }
+
+        function runAllTests() {
+            testResults = { total: 0, passed: 0, failed: 0 };
+            document.getElementById('test-results').innerHTML = '';
+
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            section.innerHTML = '<h3>📧 Testes de Validação de Email</h3>';
+            document.getElementById('test-results').appendChild(section);
+
+            test('validateEmail - email válido', () => {
+                return validateEmail('teste@email.com') === true;
+            });
+
+            test('validateEmail - email inválido sem @', () => {
+                return validateEmail('testeemail.com') === false;
+            });
+
+            test('validateEmail - email inválido sem domínio', () => {
+                return validateEmail('teste@') === false;
+            });
+
+            test('validateEmail - email vazio', () => {
+                return validateEmail('') === false;
+            });
+
+            test('validateEmail - email com espaços', () => {
+                return validateEmail('teste @email.com') === false;
+            });
+
+            const section2 = document.createElement('div');
+            section2.className = 'test-section';
+            section2.innerHTML = '<h3>💰 Testes de Validação de Valores</h3>';
+            document.getElementById('test-results').appendChild(section2);
+
+            test('validateValue - valor positivo válido', () => {
+                return validateValue(100) === true;
+            });
+
+            test('validateValue - valor zero inválido', () => {
+                return validateValue(0) === false;
+            });
+
+            test('validateValue - valor negativo inválido', () => {
+                return validateValue(-10) === false;
+            });
+
+            test('validateValue - string numérica válida', () => {
+                return validateValue('50') === true;
+            });
+
+            test('validateValue - NaN inválido', () => {
+                return validateValue(NaN) === false;
+            });
+
+            test('validateValue - null inválido', () => {
+                return validateValue(null) === false;
+            });
+
+            const section3 = document.createElement('div');
+            section3.className = 'test-section';
+            section3.innerHTML = '<h3>💾 Testes de LocalStorage</h3>';
+            document.getElementById('test-results').appendChild(section3);
+
+            test('saveAccount - salvar conta', () => {
+                const testAccount = {
+                    name: 'Teste',
+                    login: 'teste@test.com',
+                    password: '1234',
+                    transactions: []
+                };
+                saveAccount(testAccount);
+                const saved = getAccount('teste@test.com');
+                return saved && saved.name === 'Teste';
+            });
+
+            test('getAccount - recuperar conta existente', () => {
+                const account = getAccount('teste@test.com');
+                return account !== null && account.login === 'teste@test.com';
+            });
+
+            test('getAccount - conta inexistente retorna null', () => {
+                return getAccount('naoexiste@test.com') === null;
+            });
+
+            test('saveSession - salvar sessão', () => {
+                saveSession('teste@test.com', true);
+                const session = localStorage.getItem('session');
+                const loged = sessionStorage.getItem('loged');
+                return session === 'teste@test.com' && loged === 'teste@test.com';
+            });
+
+            const section4 = document.createElement('div');
+            section4.className = 'test-section';
+            section4.innerHTML = '<h3>🎨 Testes de Formatação</h3>';
+            document.getElementById('test-results').appendChild(section4);
+
+            test('formatCurrency - formatação correta', () => {
+                const result = formatCurrency(100.50);
+                return result === 'R$ 100,50';
+            });
+
+            test('formatCurrency - formatação com zero', () => {
+                const result = formatCurrency(0);
+                return result === 'R$ 0,00';
+            });
+
+            test('formatCurrency - formatação com decimais', () => {
+                const result = formatCurrency(1234.56);
+                return result === 'R$ 1234,56';
+            });
+
+            const section5 = document.createElement('div');
+            section5.className = 'test-section';
+            section5.innerHTML = '<h3>🔔 Testes de Toast (Visual)</h3>';
+            document.getElementById('test-results').appendChild(section5);
+
+            test('showToast - cria elemento toast', () => {
+                showToast('Teste de toast', 'success');
+                const toast = document.getElementById('toast-container');
+                return toast !== null;
+            });
+
+            test('showToast - remove toast anterior', () => {
+                showToast('Primeiro toast', 'info');
+                showToast('Segundo toast', 'error');
+                const toasts = document.querySelectorAll('#toast-container');
+                return toasts.length === 1;
+            });
+
+            test('showToast - toast com tipo success', () => {
+                showToast('Sucesso!', 'success');
+                const toast = document.getElementById('toast-container');
+                return toast && toast.querySelector('.toast').style.backgroundColor === 'rgb(40, 167, 69)';
+            });
+
+            test('showToast - toast com tipo error', () => {
+                showToast('Erro!', 'error');
+                const toast = document.getElementById('toast-container');
+                return toast && toast.querySelector('.toast').style.backgroundColor === 'rgb(220, 53, 69)';
+            });
+
+            const section6 = document.createElement('div');
+            section6.className = 'test-section';
+            section6.innerHTML = '<h3>🔐 Testes de Sessão</h3>';
+            document.getElementById('test-results').appendChild(section6);
+
+            test('checkSession - retorna email quando logado', () => {
+                sessionStorage.setItem('loged', 'teste@test.com');
+                const result = checkSession(false);
+                return result === 'teste@test.com';
+            });
+
+            test('checkSession - retorna null quando não logado', () => {
+                sessionStorage.removeItem('loged');
+                localStorage.removeItem('session');
+                const result = checkSession(false);
+                return result === null;
+            });
+
+            test('checkSession - restaura sessão do localStorage', () => {
+                localStorage.setItem('session', 'teste@test.com');
+                sessionStorage.removeItem('loged');
+                const result = checkSession(false);
+                return result === 'teste@test.com' && sessionStorage.getItem('loged') === 'teste@test.com';
+            });
+
+            const section8 = document.createElement('div');
+            section8.className = 'test-section';
+            section8.innerHTML = '<h3>🔍 Testes de Casos Extremos</h3>';
+            document.getElementById('test-results').appendChild(section8);
+
+            test('validateEmail - email com múltiplos @', () => {
+                return validateEmail('test@@email.com') === false;
+            });
+
+            test('validateEmail - email só com pontos', () => {
+                return validateEmail('...@...') === false;
+            });
+
+            test('validateValue - string vazia', () => {
+                return validateValue('') === false;
+            });
+
+            test('validateValue - undefined', () => {
+                return validateValue(undefined) === false;
+            });
+
+            test('formatCurrency - número muito grande', () => {
+                const result = formatCurrency(999999999.99);
+                return result === 'R$ 999999999,99';
+            });
+
+            test('getAccount - JSON inválido no localStorage', () => {
+                localStorage.setItem('invalid@test.com', 'não é json válido');
+                const result = getAccount('invalid@test.com');
+                localStorage.removeItem('invalid@test.com');
+                return result === null;
+            });
+
+            const section7 = document.createElement('div');
+            section7.className = 'test-section';
+            section7.innerHTML = '<h3>🧹 Limpeza de Testes</h3>';
+            document.getElementById('test-results').appendChild(section7);
+
+            test('Limpar dados de teste', () => {
+                localStorage.removeItem('teste@test.com');
+                localStorage.removeItem('session');
+                sessionStorage.removeItem('loged');
+                return true;
+            });
+
+            setTimeout(() => {
+                const toast = document.getElementById('toast-container');
+                if (toast) {
+                    toast.remove();
+                }
+            }, 100);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            runAllTests();
+        });
+    </script>
+</body>
+</html>
+
